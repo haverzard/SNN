@@ -23,7 +23,7 @@ function activation(result::Array{Float64, 2}, maxs::Array{Float64,2})::Array{Fl
 end
 
 function goto_layer(input::Array{Float64,2}, layer::Layer)::Array{Float64,2}
-    result = (input * layer.neurons_weights) + layer.neurons_bias
+    result = (input * layer.neurons_weights) .+ layer.neurons_bias
     return activation(result, layer.neurons_weights_total)
 end
 
