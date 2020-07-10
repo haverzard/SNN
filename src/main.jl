@@ -3,8 +3,8 @@ module SNN
 include("Error.jl")
 
 mutable struct Layer
-    neurons_weights::Array{Float64,2}
-    neurons_bias::Array{Float64,2}
+    neurons_weights::Array{Float64, 2}
+    neurons_bias::Array{Float64, 2}
     neurons_count::Int
     inputs_count::Int
 end
@@ -21,7 +21,7 @@ function activation(result::Array{Float64, 2})::Array{Float64, 2}
     return result
 end
 
-function goto_layer(input::Array{Float64,2}, layer::Layer)::Array{Float64,2}
+function goto_layer(input::Array{Float64, 2}, layer::Layer)::Array{Float64, 2}
     result = (input * layer.neurons_weights) .+ layer.neurons_bias
     return activation(result)
 end
@@ -32,12 +32,12 @@ mutable struct NeuralNetwork
     learning_rate::Float64
 end
 
-function create_neuralnetwork(mapping::Array{Int,1})::NeuralNetwork
+function create_neuralnetwork(mapping::Array{Int, 1})::NeuralNetwork
     total_layers = length(mapping)-1
     if total_layers <= 0
         throw(GenerationError("Neural Network", "Bad mapping input"))
     end
-    layers = Array{Layer,1}(undef, total_layers)
+    layers = Array{Layer, 1}(undef, total_layers)
     for i in 1:total_layers
         layers[i] = create_layer(mapping[i], mapping[i+1])
     end
@@ -52,13 +52,13 @@ function process(inputs::Array{Float64, 1}, neural::NeuralNetwork)
 
 end
 
-function backprop1(neurons::Array{Float64, 2}, expected::Array{Float64, 2})
+function backprop1(neurons::Array{Float64, 2}, expected::Array{Float64, 2})::Array{Float64, 2}
     delta_activation = neurons .* (1 .- neurons)
     delta_c = neurons .- expected
-    errors = delta_c .* delta_activation
+    return delta_c .* delta_activation
 end
 
-function backprop2(neurons::Array{Float64, 2}, layer_weigths::Array{Float64, 2}, errors::Array{Float64,2})
+function backprop2(neurons::Array{Float64, 2}, layer_weigths::Array{Float64, 2}, errors::Array{Float64, 2})
     delta_activation = neurons .* (1 .- neurons)
     errors = (transpose(layer_weigths) * errors) .* delta_activation
 end
@@ -67,16 +67,28 @@ function backprop4(neurons::Array{Float64,2}, errors::Array{Float64, 2})
     delta_weight = transpose(neurons) * errors
 end
 
-function train_neuralnetwork(inputs::Array{Float64,2}, neural::NeuralNetwork, expected_results::Array{Float64,2})
-    layers_outputs = Array{Array{Float64,2},1}()
+function train_neuralnetwork(inputs::Array{Float64, 2}, neural::NeuralNetwork, expected_results::Array{Float64, 2})
+    layers_outputs = Array{Array{Float64, 2}, 1}()
+    layers_errors = Array{Array{Float64, 2}, 1}(undef, neural.total_layers)
+    (n, _) = size(inputs)
+    L = neural.total_layers
     
     layer_inputs = inputs
-    for i in 1:neural.total_layers
+    for i in 1:L
         results = goto_layer(layer_inputs, neural.layers[i])
         push!(layers_outputs, results)
         layer_inputs = results
     end
-    errors = (layer_inputs - expected_results)
+    # Getting the last layer error
+    layers_errors[L] = backprop1(hcat(layers_outputs[L][1,:]...), expected_results)
+    for i in 2:n
+        layers_errors[L] = layers_errors[L] .+ backprop1(hcat(layers_outputs[L][i,:]...), expected_results)
+    end
+    layers_errors[L] = layers_errors[L] ./ n
+    print(layers_errors[L])
+    # Getting the other layer error
+    # Calculate gradient descent
+    # Learn
 end
 
 end
