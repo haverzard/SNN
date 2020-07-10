@@ -4,7 +4,6 @@ include("Error.jl")
 
 mutable struct Layer
     neurons_weights::Array{Float64,2}
-    neurons_weights_total::Array{Float64,2}
     neurons_bias::Array{Float64,2}
     neurons_count::Int
     inputs_count::Int
@@ -13,18 +12,18 @@ end
 function create_layer(from::Int, to::Int)::Layer
     random_weights = rand(from, to)
     random_bias = rand(1,to)
-    return Layer(random_weights, sum(random_weights, dims=1) + random_bias, random_bias, to, from)
+    return Layer(random_weights, random_bias, to, from)
 end
 
-function activation(result::Array{Float64, 2}, maxs::Array{Float64,2})::Array{Float64, 2}
-    result = result ./ maxs
-    result[result .< 0] .= 0
+# We use the classic activation function for now
+function activation(result::Array{Float64, 2})::Array{Float64, 2}
+    result = 1 ./ (1 .+ exp.(-result))
     return result
 end
 
 function goto_layer(input::Array{Float64,2}, layer::Layer)::Array{Float64,2}
     result = (input * layer.neurons_weights) .+ layer.neurons_bias
-    return activation(result, layer.neurons_weights_total)
+    return activation(result)
 end
 
 mutable struct NeuralNetwork
@@ -53,6 +52,21 @@ function process(inputs::Array{Float64, 1}, neural::NeuralNetwork)
 
 end
 
+function backprop1(neurons::Array{Float64, 2}, expected::Array{Float64, 2})
+    delta_activation = neurons .* (1 .- neurons)
+    delta_c = neurons .- expected
+    errors = delta_c .* delta_activation
+end
+
+function backprop2(neurons::Array{Float64, 2}, layer_weigths::Array{Float64, 2}, errors::Array{Float64,2})
+    delta_activation = neurons .* (1 .- neurons)
+    errors = (transpose(layer_weigths) * errors) .* delta_activation
+end
+
+function backprop4(neurons::Array{Float64,2}, errors::Array{Float64, 2})
+    delta_weight = transpose(neurons) * errors
+end
+
 function train_neuralnetwork(inputs::Array{Float64,2}, neural::NeuralNetwork, expected_results::Array{Float64,2})
     layers_outputs = Array{Array{Float64,2},1}()
     
@@ -61,9 +75,8 @@ function train_neuralnetwork(inputs::Array{Float64,2}, neural::NeuralNetwork, ex
         results = goto_layer(layer_inputs, neural.layers[i])
         push!(layers_outputs, results)
         layer_inputs = results
-        print(layer_inputs)
     end
-    print(layers_outputs)
+    errors = (layer_inputs - expected_results)
 end
 
 end
