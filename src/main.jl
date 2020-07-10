@@ -58,9 +58,10 @@ function backprop1(neurons::Array{Float64, 2}, expected::Array{Float64, 2})::Arr
     return delta_c .* delta_activation
 end
 
-function backprop2(neurons::Array{Float64, 2}, layer_weigths::Array{Float64, 2}, errors::Array{Float64, 2})
+function backprop2(neurons::Array{Float64, 2}, layer_weigths::Array{Float64, 2}, errors::Array{Float64, 2})::Array{Float64, 2}
     delta_activation = neurons .* (1 .- neurons)
-    errors = (transpose(layer_weigths) * errors) .* delta_activation
+    print(errors)
+    return (layer_weigths * errors) .* delta_activation
 end
 
 function backprop4(neurons::Array{Float64,2}, errors::Array{Float64, 2})
@@ -85,8 +86,14 @@ function train_neuralnetwork(inputs::Array{Float64, 2}, neural::NeuralNetwork, e
         layers_errors[L] = layers_errors[L] .+ backprop1(hcat(layers_outputs[L][i,:]...), expected_results)
     end
     layers_errors[L] = layers_errors[L] ./ n
-    print(layers_errors[L])
     # Getting the other layer error
+    for i in reverse(1:L-1)
+        layers_errors[i] = backprop2(hcat(layers_outputs[i][1,:]...), neural.layers[i+1].neurons_weights, layers_errors[i+1])
+        for j in 2:n
+            layers_errors[i] = layers_errors[i] .+ backprop2(hcat(layers_outputs[i][j,:]...), neural.layers[i+1].neurons_weights, layers_errors[i+1])
+        end
+        layers_errors[i] = layers_errors[i] ./ n
+    end
     # Calculate gradient descent
     # Learn
 end
