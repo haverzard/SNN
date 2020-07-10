@@ -60,11 +60,16 @@ end
 
 function backprop2(neurons::Array{Float64, 2}, layer_weigths::Array{Float64, 2}, errors::Array{Float64, 2})::Array{Float64, 2}
     delta_activation = neurons .* (1 .- neurons)
-    return transpose(layer_weigths * errors) .* delta_activation
+    # print(layer_weigths)
+    # print(errors)
+    # throw(GenerationError("Hehe", "hehe"))
+    return (errors * transpose(layer_weigths)) .* delta_activation
 end
 
 function backprop4(neurons::Array{Float64,2}, errors::Array{Float64, 2})::Array{Float64, 2}
-    return neurons * errors
+    print(neurons)
+    print(errors)
+    return transpose(neurons) .* errors
 end
 
 function train_neuralnetwork(inputs::Array{Float64, 2}, neural::NeuralNetwork, expected_results::Array{Float64, 2})
@@ -79,7 +84,6 @@ function train_neuralnetwork(inputs::Array{Float64, 2}, neural::NeuralNetwork, e
         push!(layers_outputs, results)
         layer_inputs = results
     end
-    # print(layers_outputs[end])
     # Getting the last layer error
     layers_errors[L] = backprop1(hcat(layers_outputs[L][1,:]...), expected_results)
     for i in 2:n
@@ -95,11 +99,14 @@ function train_neuralnetwork(inputs::Array{Float64, 2}, neural::NeuralNetwork, e
         layers_errors[i] = layers_errors[i] ./ n
     end
     # Calculate gradient descent and learn
-    # print(layers_errors[L] .* neural.learning_rate)
-    for i in 1:L
+    neural.layers[1].neurons_bias = neural.layers[1].neurons_bias .- (layers_errors[1] .* neural.learning_rate)
+    for j in 1:n
+        neural.layers[1].neurons_weights = neural.layers[1].neurons_weights .- (backprop4(hcat(inputs[j,:]...), layers_errors[1]) .* neural.learning_rate)
+    end
+    for i in 2:L
         neural.layers[i].neurons_bias = neural.layers[i].neurons_bias .- (layers_errors[i] .* neural.learning_rate)
         for j in 1:n
-            neural.layers[i].neurons_weights = neural.layers[i].neurons_weights .- (backprop4(hcat(layers_outputs[i][j,:]...), layers_errors[i]) .* neural.learning_rate)
+            neural.layers[i].neurons_weights = neural.layers[i].neurons_weights .- (backprop4(hcat(layers_outputs[i-1][j,:]...), layers_errors[i]) .* neural.learning_rate)
         end
     end
 end
