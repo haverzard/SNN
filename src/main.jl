@@ -41,7 +41,7 @@ function create_neuralnetwork(mapping::Array{Int, 1})::NeuralNetwork
     for i in 1:total_layers
         layers[i] = create_layer(mapping[i], mapping[i+1])
     end
-    return NeuralNetwork(layers, total_layers, 0.1)
+    return NeuralNetwork(layers, total_layers, 0.8)
 end
 
 function train_layer(layer::Layer, learning_rate::Int, errors::Array{Float64, 1})
@@ -60,12 +60,11 @@ end
 
 function backprop2(neurons::Array{Float64, 2}, layer_weigths::Array{Float64, 2}, errors::Array{Float64, 2})::Array{Float64, 2}
     delta_activation = neurons .* (1 .- neurons)
-    print(errors)
-    return (layer_weigths * errors) .* delta_activation
+    return transpose(layer_weigths * errors) .* delta_activation
 end
 
-function backprop4(neurons::Array{Float64,2}, errors::Array{Float64, 2})
-    delta_weight = transpose(neurons) * errors
+function backprop4(neurons::Array{Float64,2}, errors::Array{Float64, 2})::Array{Float64, 2}
+    return neurons * errors
 end
 
 function train_neuralnetwork(inputs::Array{Float64, 2}, neural::NeuralNetwork, expected_results::Array{Float64, 2})
@@ -80,6 +79,7 @@ function train_neuralnetwork(inputs::Array{Float64, 2}, neural::NeuralNetwork, e
         push!(layers_outputs, results)
         layer_inputs = results
     end
+    # print(layers_outputs[end])
     # Getting the last layer error
     layers_errors[L] = backprop1(hcat(layers_outputs[L][1,:]...), expected_results)
     for i in 2:n
@@ -94,8 +94,14 @@ function train_neuralnetwork(inputs::Array{Float64, 2}, neural::NeuralNetwork, e
         end
         layers_errors[i] = layers_errors[i] ./ n
     end
-    # Calculate gradient descent
-    # Learn
+    # Calculate gradient descent and learn
+    # print(layers_errors[L] .* neural.learning_rate)
+    for i in 1:L
+        neural.layers[i].neurons_bias = neural.layers[i].neurons_bias .- (layers_errors[i] .* neural.learning_rate)
+        for j in 1:n
+            neural.layers[i].neurons_weights = neural.layers[i].neurons_weights .- (backprop4(hcat(layers_outputs[i][j,:]...), layers_errors[i]) .* neural.learning_rate)
+        end
+    end
 end
 
 end
