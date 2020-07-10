@@ -90,9 +90,9 @@ function train_neuralnetwork(inputs::Array{Float64, 2}, neural::NeuralNetwork, e
     end
 
     # Getting the last layer error
-    layers_errors[L] = backprop1(hcat(layers_outputs[L][1,:]...), expected_results)
+    layers_errors[L] = backprop1(hcat(layers_outputs[L][1,:]...), hcat(expected_results[1,:]...))
     for i in 2:n
-        layers_errors[L] = layers_errors[L] .+ backprop1(hcat(layers_outputs[L][i,:]...), expected_results)
+        layers_errors[L] = layers_errors[L] .+ backprop1(hcat(layers_outputs[L][i,:]...), hcat(expected_results[i,:]...))
     end
     layers_errors[L] = layers_errors[L] ./ n
 
