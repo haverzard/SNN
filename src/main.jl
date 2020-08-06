@@ -44,14 +44,6 @@ function create_neuralnetwork(mapping::Array{Int, 1})::NeuralNetwork
     return NeuralNetwork(layers, total_layers, 0.8)
 end
 
-function train_layer(layer::Layer, learning_rate::Int, errors::Array{Float64, 1})
-
-end
-
-function process(inputs::Array{Float64, 1}, neural::NeuralNetwork)
-
-end
-
 function backprop1(neurons::Array{Float64, 2}, expected::Array{Float64, 2})::Array{Float64, 2}
     delta_activation = neurons .* (1 .- neurons)
     delta_c = neurons .- expected
